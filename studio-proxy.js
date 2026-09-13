@@ -52,6 +52,9 @@ http.createServer((req, res) => {
     }
   });
 
-  pr.on('error', () => { res.writeHead(502); res.end('Bad Gateway'); });
+  pr.on('error', () => {
+    if (!res.headersSent) { res.writeHead(502); res.end('Bad Gateway'); }
+  });
+  req.on('error', () => { pr.destroy(); });
   req.pipe(pr);
 }).listen(PROXY_PORT, () => console.log('Studio inject-proxy on', PROXY_PORT));
