@@ -17,10 +17,12 @@ Supabase auto-hébergé (PostgREST, Storage, Studio) déployé avec Coolify.
   rôle limité `authenticator` et utilise le rôle `anon` (avant : `postgres`, ce qui
   permettait d'exécuter des commandes sur le serveur).
 
-## Étape suivante conseillée
+## Clé anon : aucun accès aux tables
 
-Activer la sécurité ligne par ligne (RLS) sur les tables du schéma `public` et
-définir des règles d'accès, puis retirer les `GRANT ALL` donnés à `anon` dans `init.sh`.
+La clé `ANON_KEY` est publique (elle est dans le code des sites). Elle n'a donc
+**aucun droit** sur les tables : seul `service_role` (clé serveur) et les comptes
+`app_*` (créés par `nouvelle-app.sh`) lisent la base. Pour ouvrir une table au
+public, le faire table par table : activer RLS et écrire une règle précise.
 
 ## Ajouter une application qui utilise la base
 

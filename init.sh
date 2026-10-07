@@ -22,15 +22,18 @@ SELECT 'CREATE ROLE authenticator LOGIN NOINHERIT' WHERE NOT EXISTS (SELECT FROM
 ALTER ROLE authenticator WITH PASSWORD :'auth_pw';
 GRANT anon, authenticated, service_role TO authenticator;
 
--- Accès aux données du schéma public (même comportement qu'avant pour les applications,
--- mais sans les droits super-utilisateur qui permettaient d'exécuter des commandes sur le serveur)
+-- Schéma public : SEUL service_role (clé serveur) y a accès.
+-- anon / authenticated n'ont AUCUN droit : la clé anon est publique (elle est dans
+-- le code des sites), lui donner accès aux tables exposerait toutes les données.
+-- Pour ouvrir une table au public, le faire table par table avec RLS + règle.
 GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
-GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
-GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
 
 GRANT ALL ON DATABASE postgres TO supabase_admin;
 EOSQL
