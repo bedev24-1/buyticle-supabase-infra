@@ -1,13 +1,25 @@
 version: '3.8'
 
+# Tous les secrets viennent des variables d'environnement définies dans Coolify
+# (POSTGRES_PASSWORD, SUPABASE_ADMIN_PASSWORD, AUTHENTICATOR_PASSWORD,
+#  JWT_SECRET, ANON_KEY, SERVICE_ROLE_KEY). Rien de secret dans ce dépôt.
+#
+# Aucun port n'est publié sur internet : Docker contourne UFW, donc un port
+# publié ici serait ouvert au monde entier. rest et storage sont servis par
+# Coolify (Traefik) via leurs domaines. Studio n'écoute que sur 127.0.0.1 :
+# y accéder par tunnel SSH (ssh -L 3011:127.0.0.1:3011 root@IP_DU_VPS).
+
 services:
   db:
     build:
       context: .
       dockerfile: Dockerfile.db
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      SUPABASE_ADMIN_PASSWORD: ${SUPABASE_ADMIN_PASSWORD:?}
+      AUTHENTICATOR_PASSWORD: ${AUTHENTICATOR_PASSWORD:?}
     volumes:
       - supabase_db_final:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -19,17 +31,20 @@ services:
       context: .
       dockerfile: Dockerfile.postgrest
     container_name: supabase-rest
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${AUTHENTICATOR_PASSWORD:?}@db:5432/postgres?sslmode=disable&connect_timeout=10
+      PGRST_JWT_SECRET: ${JWT_SECRET:?}
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "8011:3000"
 
   meta:
     build:
       context: .
       dockerfile: Dockerfile.meta
     container_name: supabase-meta
+    environment:
+      PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD:?}
     depends_on:
       db:
         condition: service_healthy
@@ -39,11 +54,14 @@ services:
       context: .
       dockerfile: Dockerfile.storage
     container_name: supabase-storage
+    environment:
+      ANON_KEY: ${ANON_KEY:?}
+      SERVICE_KEY: ${SERVICE_ROLE_KEY:?}
+      PGRST_JWT_SECRET: ${JWT_SECRET:?}
+      DATABASE_URL: postgresql://supabase_admin:${SUPABASE_ADMIN_PASSWORD:?}@db:5432/postgres
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "5010:5000"
     volumes:
       - supabase_storage:/var/lib/storage
 
@@ -62,12 +80,18 @@ services:
       context: .
       dockerfile: Dockerfile.studio
     container_name: supabase-studio
+    environment:
+      SUPABASE_ANON_KEY: ${ANON_KEY:?}
+      SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY:?}
+      SUPABASE_INTERNAL_SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY:?}
+      NEXT_PUBLIC_STORAGE_KEY: ${SERVICE_ROLE_KEY:?}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
     depends_on:
       - rest
       - meta
       - storage
     ports:
-      - "3011:3000"
+      - "127.0.0.1:3011:3000"
 
 volumes:
   supabase_db_final:
