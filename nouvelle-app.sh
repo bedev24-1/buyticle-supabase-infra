@@ -31,6 +31,12 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA :"schema" TO :"role";
 ALTER DEFAULT PRIVILEGES IN SCHEMA :"schema" GRANT ALL ON TABLES TO :"role";
 ALTER DEFAULT PRIVILEGES IN SCHEMA :"schema" GRANT ALL ON SEQUENCES TO :"role";
 GRANT USAGE ON SCHEMA public TO :"role";
+-- Tables protégées par RLS : sans règle, le compte de l'application y voit 0 ligne
+-- (sans erreur). On lui donne l'accès à SON schéma uniquement.
+SELECT format('DROP POLICY IF EXISTS %I ON %I.%I; CREATE POLICY %I ON %I.%I FOR ALL TO %I USING (true) WITH CHECK (true)',
+              :'role'||'_acces', n.nspname, c.relname, :'role'||'_acces', n.nspname, c.relname, :'role')
+FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE c.relkind IN ('r','p') AND c.relrowsecurity AND n.nspname = :'schema' \gexec
 SQL
 
 URL="postgres://$ROLE:$PW@$HOTE:5432/postgres"

@@ -4,6 +4,9 @@ version: '3.8'
 # (POSTGRES_PASSWORD, SUPABASE_ADMIN_PASSWORD, AUTHENTICATOR_PASSWORD,
 #  JWT_SECRET, ANON_KEY, SERVICE_ROLE_KEY). Rien de secret dans ce dépôt.
 #
+# Limites mémoire/CPU par service : un service qui déraille ne peut pas
+# faire tomber tout le serveur (2 CPU, 8 Go).
+#
 # Aucun port n'est publié sur internet : Docker contourne UFW, donc un port
 # publié ici serait ouvert au monde entier. rest et storage sont servis par
 # Coolify (Traefik) via leurs domaines. Studio n'écoute que sur 127.0.0.1 :
@@ -11,6 +14,9 @@ version: '3.8'
 
 services:
   db:
+    mem_limit: 1536m
+    memswap_limit: 3072m
+    cpus: 1.5
     build:
       context: .
       dockerfile: Dockerfile.db
@@ -34,6 +40,9 @@ services:
       retries: 10
 
   rest:
+    mem_limit: 256m
+    memswap_limit: 512m
+    cpus: 0.5
     build:
       context: .
       dockerfile: Dockerfile.postgrest
@@ -46,6 +55,9 @@ services:
         condition: service_healthy
 
   meta:
+    mem_limit: 256m
+    memswap_limit: 512m
+    cpus: 0.5
     build:
       context: .
       dockerfile: Dockerfile.meta
@@ -57,6 +69,9 @@ services:
         condition: service_healthy
 
   storage:
+    mem_limit: 512m
+    memswap_limit: 1024m
+    cpus: 0.75
     build:
       context: .
       dockerfile: Dockerfile.storage
@@ -73,6 +88,9 @@ services:
       - supabase_storage:/var/lib/storage
 
   imgproxy:
+    mem_limit: 256m
+    memswap_limit: 512m
+    cpus: 0.5
     image: darthsim/imgproxy:v3.8.0
     container_name: supabase-imgproxy
     environment:
@@ -83,6 +101,9 @@ services:
       - supabase_storage:/var/lib/storage:ro
 
   studio:
+    mem_limit: 512m
+    memswap_limit: 1024m
+    cpus: 0.5
     build:
       context: .
       dockerfile: Dockerfile.studio
