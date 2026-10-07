@@ -20,6 +20,13 @@ services:
       AUTHENTICATOR_PASSWORD: ${AUTHENTICATOR_PASSWORD:?}
     volumes:
       - supabase_db_final:/var/lib/postgresql/data
+    # Joignable par les autres applications Coolify sous le nom "supabase-db"
+    # (réseau Docker interne "coolify" : aucun port ouvert sur internet).
+    networks:
+      default:
+      coolify:
+        aliases:
+          - supabase-db
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -92,6 +99,10 @@ services:
       - storage
     ports:
       - "127.0.0.1:3011:3000"
+
+networks:
+  coolify:
+    external: true
 
 volumes:
   supabase_db_final:
