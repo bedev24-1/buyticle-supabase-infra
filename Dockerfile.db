@@ -1,5 +1,7 @@
 FROM postgres:15-bookworm
 
-ENV POSTGRES_PASSWORD=buyticle
+# Les mots de passe viennent des variables d'environnement (Coolify), jamais du dépôt.
 ENV POSTGRES_USER=postgres
 ENV POSTGRES_DB=postgres
+
+COPY init.sh /docker-entrypoint-initdb.d/00-init.sh

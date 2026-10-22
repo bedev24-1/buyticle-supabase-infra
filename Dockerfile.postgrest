@@ -10,10 +10,9 @@ RUN apt-get update \
 
 COPY --from=pgrst /bin/postgrest /bin/postgrest
 
-ENV PGRST_DB_URI="postgres://postgres:buyticle@db:5432/postgres?sslmode=disable&connect_timeout=10"
+# PGRST_DB_URI et PGRST_JWT_SECRET sont fournis par docker-compose (variables Coolify)
 ENV PGRST_DB_SCHEMAS="public"
-ENV PGRST_DB_ANON_ROLE="postgres"
-ENV PGRST_JWT_SECRET="jksdfhksdfldjflhslfhljskhflsjhgsdjfhgskjg"
+ENV PGRST_DB_ANON_ROLE="anon"
 ENV PGRST_DB_USE_LEGACY_GUCS="true"
 ENV PGRST_SERVER_HOST="0.0.0.0"
 
